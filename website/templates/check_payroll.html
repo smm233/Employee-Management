@@ -1,0 +1,87 @@
+<!-- check_payroll.html -->
+{% extends "base.html" %}
+{% block title %}Check Payroll{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Payroll Information</h1>
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Employee Information</h3>
+            <p><strong>Employee ID:</strong> {{ employee.employee_id }}</p>
+            <p><strong>Full Name:</strong> {{ employee.firstname }} {{ employee.middlename }} {{ employee.lastname }}</p>
+            <hr>
+            <h3>Date Information</h3>
+            <p><strong>Date Today:</strong> {{ date_today }}</p>
+            <p><strong>Date Start:</strong> <input type="date" id="date_start" name="date_start"></p>
+            <p><strong>Date End:</strong> <input type="date" id="date_end" name="date_end"></p>
+        </div>
+        <div class="col-md-6">
+            <h3>Initial Income</h3>
+            <p><strong>Designation:</strong>
+                {% if employee.assign_designation %}
+                {{ employee.assign_designation[0].designation.designation_name }}
+                {% else %}
+                    No designation assigned
+                {% endif %}</p>
+            <p>
+            <strong>Employee Type:</strong>
+            {% for assign_designation in employee.assign_designation %}
+                {% set employee_type = assign_designation.employee_type %}
+                {{ employee_type }}
+            {% endfor %}
+            </p>
+            <p><strong>Initial Income:</strong> {{ initial_income }}</p>
+            <p><strong>Tax Rate:</strong> {{ tax_rate }}</p>
+            <hr>
+            <h3>Calculated Payroll</h3>
+            <p><strong>Net Income:</strong> <span id="net_income"></span></p>
+            <p><strong>Additional Deductions:</strong> <span id="additionalDeductions"></span></p>
+            <p><strong>Tax Deduction:</strong> <span id="tax_deduction"></span></p>
+
+            
+            <button onclick="calculatePayroll()">Generate Payslip</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculatePayroll() {
+    var dateStart = document.getElementById("date_start").value;
+    var dateEnd = document.getElementById("date_end").value;
+    var initialIncome = parseFloat("{{ initial_income }}");
+    
+    // Calculate number of days between date start and date end
+    var startDate = new Date(dateStart);
+    var endDate = new Date(dateEnd);
+    var daysWorked = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1; // Including both start and end dates
+    
+    // Calculate total income before tax deduction
+    var totalIncomeBeforeTax = initialIncome * daysWorked;
+    
+    // Calculate tax deduction based on total income
+    var taxDeduction = totalIncomeBeforeTax * parseFloat("{{ tax_rate }}");
+    
+    // Calculate additional deductions based on employee type
+    var additionalDeductions = 0;
+    if ("{{ employee.assign_designation[0].employee_type }}" === 'Part-time') {
+    additionalDeductions = (initialIncome * daysWorked) / 2;    
+    }
+
+    
+    // Deduct additional deductions from total income before tax deduction
+    var totalIncomeAfterDeductions = totalIncomeBeforeTax - additionalDeductions;
+    
+    // Deduct tax from total income after additional deductions
+    var netIncome = totalIncomeAfterDeductions - taxDeduction;
+    
+    // Display calculated values
+    document.getElementById("net_income").innerText = netIncome.toFixed(2);
+    document.getElementById("tax_deduction").innerText = taxDeduction.toFixed(2);
+    document.getElementById("additionalDeductions").innerText = additionalDeductions.toFixed(2);
+
+    
+}
+</script>
+{% endblock %}
